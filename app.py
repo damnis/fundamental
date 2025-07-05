@@ -33,9 +33,9 @@ if ticker:
     if profile and key_metrics:
         with st.expander("🧾 Bedrijfsprofiel & Kerninfo", expanded=True):
             col1, col2, col3 = st.columns(3)
-            col1.metric("Prijs", format_value(profile.get("price"), True))
-            col1.metric("Marktkapitalisatie", format_value(profile.get("mktCap"), True))
-            col2.metric("Dividend (per aandeel)", format_value(profile.get("lastDiv"), True))
+            col1.metric("Prijs", format_value(profile.get("price")))
+            col1.metric("Marktkapitalisatie", format_value(profile.get("mktCap")))
+            col2.metric("Dividend (per aandeel)", format_value(profile.get("lastDiv")))
             col2.metric("Dividendrendement", format_value(key_metrics.get("dividendYield", 0), is_percent=True))
             col3.metric("Payout Ratio", format_value(key_metrics.get("payoutRatio", 0), is_percent=True))
             st.caption(profile.get("description", ""))
@@ -49,6 +49,15 @@ if ticker:
         df_ratio = pd.DataFrame(ratio_data)
         with st.expander("📐 Ratio's over de jaren"):
             st.dataframe(df_ratio[["date", "priceEarningsRatio", "returnOnEquity", "debtEquityRatio"]].set_index("date"))
+
+        with st.expander("🧮 Extra Ratio's"):
+            extra_cols = [
+                "currentRatio", "quickRatio", "grossProfitMargin",
+                "operatingProfitMargin", "netProfitMargin", "returnOnAssets", "inventoryTurnover"
+            ]
+            available_cols = [col for col in extra_cols if col in df_ratio.columns]
+            if available_cols:
+                st.dataframe(df_ratio[["date"] + available_cols].set_index("date"))
 
         with st.expander("📊 Grafieken"):
             col1, col2 = st.columns(2)
