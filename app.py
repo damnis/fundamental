@@ -4,17 +4,15 @@ from fmp_api import get_income_statement, get_ratios
 from extra_data import get_profile, get_key_metrics
 from tickers import ticker_list
 
-def format_value(value, is_currency=False, is_percent=False):
+def format_value(value, is_percent=False):
     try:
         if value is None:
             return "-"
         value = float(value)
-        if is_currency:
-            if abs(value) > 200_000:
-                return f"${value / 1_000_000:.2f} mln"
-            return f"${value:,.2f}"
         if is_percent:
             return f"{value:.2%}"
+        if abs(value) >= 200_000:
+            return f"{value / 1_000_000:.2f} mln"
         return f"{value:,.2f}"
     except:
         return "-"
