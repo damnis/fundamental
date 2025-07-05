@@ -157,7 +157,7 @@ if ratio_data:
                 st.dataframe(df_qr.set_index("Kwartaal"))
 
 
-with st.expander(\"📅 Belangrijke datums\"):
+with st.expander("📅 Belangrijke datums"):
         if isinstance(earnings, list) and len(earnings) > 0 and isinstance(earnings[0], dict):
             df_earn = pd.DataFrame(earnings)
             df_earn = df_earn[["date", "eps", "epsEstimated"]]
