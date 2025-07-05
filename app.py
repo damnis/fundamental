@@ -131,36 +131,41 @@ if ratio_data:
                 st.dataframe(df_extra.set_index("Jaar")[extra_cols])
 
         
-        with st.expander("🧮 Extra Ratio's per kwartaal (afgeleid uit publicatiedatum)"):
-            if "date" in df_ratio.columns:
-                df_ratio["date"] = pd.to_datetime(df_ratio["date"])
-                last_date = df_ratio["date"].max()
+        with st.expander("🧮 Extra Ratio's per kwartaal (geschat)"):
+            if "calendarYear" in df_ratio.columns:
+                latest_year = int(df_ratio["calendarYear"].max())
 
-                # Genereer 4 datums terug in de tijd (3 maanden stappen)
-                q_dates = [last_date - pd.DateOffset(months=3 * i) for i in range(4)]
+                # Bouw vier 'kwartalen' terug met delta -3 maanden vanaf einde van elk kwartaal
+                quarter_ends = [
+                    pd.to_datetime(f"{latest_year}-09-30"),
+                    pd.to_datetime(f"{latest_year}-06-30"),
+                    pd.to_datetime(f"{latest_year}-03-31"),
+                    pd.to_datetime(f"{latest_year-1}-12-31")
+                ]
 
-                # Maak rijen aan voor elk kwartaal
-                df_q_est = pd.DataFrame({"Kwartaal": q_dates})
+                # Neem laatste rij als basisratio's
+                latest_row = df_ratio[df_ratio["calendarYear"] == str(latest_year)].iloc[0]
+
+                df_quarters = pd.DataFrame({"Kwartaal": quarter_ends})
                 for col in df_ratio.columns:
-                    if col not in ["date"]:
-                        value = df_ratio[col].iloc[-1]  # laatste bekende jaarwaarde als basis
-                        df_q_est[col] = value
+                    if col not in ["date", "calendarYear"]:
+                        df_quarters[col] = latest_row[col]
 
-                # Kolomnamen vertalen + formatteren
-                df_q_est.rename(columns=col_renames, inplace=True)
-                for col in df_q_est.columns:
+                df_quarters.rename(columns=col_renames, inplace=True)
+
+                for col in df_quarters.columns:
                     if col == "Kwartaal":
                         continue
                     if "%" in col or "marge" in col.lower():
-                        df_q_est[col] = df_q_est[col].apply(lambda x: format_value(x, is_percent=True))
+                        df_quarters[col] = df_quarters[col].apply(lambda x: format_value(x, is_percent=True))
                     else:
-                        df_q_est[col] = df_q_est[col].apply(format_value)
+                        df_quarters[col] = df_quarters[col].apply(format_value)
 
-                df_q_est["Kwartaal"] = df_q_est["Kwartaal"].dt.date
-                st.dataframe(df_q_est.set_index("Kwartaal"))
+                df_quarters["Kwartaal"] = df_quarters["Kwartaal"].dt.date
+                st.dataframe(df_quarters.set_index("Kwartaal"))
             else:
-                st.info("Geen datumkolom gevonden om kwartaalratio's af te leiden.")
-
+                st.info("Kan geen kwartaaldata afleiden zonder 'calendarYear'")
+                
     
         with st.expander("🧮 Extra Ratio's per kwartaal"):
             df_qr = get_ratios(ticker + "?period=quarter")
