@@ -5,7 +5,6 @@ from extra_data import (
     get_profile, get_key_metrics, get_earning_calendar,
     get_dividend_history, get_quarterly_eps, get_eps_forecast
 )
-from tickers import ticker_list
 
 def format_value(value, is_percent=False):
     try:
@@ -23,7 +22,23 @@ def format_value(value, is_percent=False):
 st.set_page_config(page_title="Fundamentele Analyse Tool", layout="wide")
 st.title("📊 Fundamentool: Ratio-analyse van aandelen")
 
-ticker = st.selectbox("Selecteer een ticker", ticker_list)
+if "recent_tickers" not in st.session_state:
+    st.session_state["recent_tickers"] = []
+
+ticker_input = st.text_input("Voer een ticker in (bijv. AAPL, MSFT)", value="AAPL").upper().strip()
+
+if ticker_input:
+    st.info(f"📥 Data wordt opgehaald voor: {ticker_input}")
+    profile = get_profile(ticker_input)
+    if profile:
+        ticker = ticker_input
+        if ticker not in st.session_state["recent_tickers"]:
+            st.session_state["recent_tickers"].append(ticker)
+    else:
+        st.error("❌ Ticker niet gevonden. Controleer de spelling.")
+        ticker = None
+else:
+    ticker = None
 
 if ticker:
     st.info(f"📥 Data wordt opgehaald voor: {ticker}")
