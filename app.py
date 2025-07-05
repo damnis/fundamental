@@ -130,6 +130,41 @@ if ratio_data:
             if extra_cols:
                 st.dataframe(df_extra.set_index("Jaar")[extra_cols])
 
+        
+        with st.expander("🧮 Extra Ratio's per kwartaal (geschat)"):
+            # Haal earnings datums op (laatste 4)
+            earnings_dates = []
+            if isinstance(earnings, list) and len(earnings) > 0:
+                for item in earnings:
+                    try:
+                        earnings_dates.append(pd.to_datetime(item.get("date")))
+                    except:
+                        pass
+                earnings_dates = sorted(set(earnings_dates))[-4:]
+
+            # Filter ratio-data op kwartaalmomenten (3 maanden terug vanaf earnings)
+            df_qr = df_ratio.copy()
+            df_qr["date"] = pd.to_datetime(df_qr["date"])
+
+            valid_qdates = []
+            for edate in earnings_dates:
+                approx_qdate = edate - pd.DateOffset(months=3)
+                closest = df_qr.iloc[(df_qr["date"] - approx_qdate).abs().argsort()[:1]]
+                valid_qdates.append(closest)
+
+            if valid_qdates:
+                df_quarters = pd.concat(valid_qdates).drop_duplicates().sort_values("date")
+                df_quarters.rename(columns=col_renames, inplace=True)
+                for col in df_quarters.columns:
+                    if "%" in col or "marge" in col.lower():
+                        df_quarters[col] = df_quarters[col].apply(lambda x: format_value(x, is_percent=True))
+                    elif col not in ["date"]:
+                        df_quarters[col] = df_quarters[col].apply(format_value)
+                df_quarters.rename(columns={"date": "Kwartaal"}, inplace=True)
+                st.dataframe(df_quarters.set_index("Kwartaal"))
+            else:
+                st.info("Geen betrouwbare kwartaaldata gevonden voor ratio's.")
+                
         with st.expander("🧮 Extra Ratio's per kwartaal"):
             df_qr = get_ratios(ticker + "?period=quarter")
             if isinstance(df_qr, list) and len(df_qr) > 0 and isinstance(df_qr[0], dict):
