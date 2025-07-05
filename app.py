@@ -11,8 +11,8 @@ def format_value(value, is_percent=False):
         value = float(value)
         if is_percent:
             return f"{value:.2%}"
-        if abs(value) >= 200_000:
-            return f"{value / 1_000_000:.2f} mln"
+        if abs(value) >= 99_000_000:
+            return f"{value / 1_000_000_000:.2f} mld"
         return f"{value:,.2f}"
     except:
         return "-"
