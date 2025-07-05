@@ -48,14 +48,14 @@ if ticker:
             st.caption(profile.get("description", ""))
 
     with st.expander("📅 Belangrijke datums"):
-        if earnings:
+        if isinstance(earnings, list) and len(earnings) > 0 and isinstance(earnings[0], dict):
             df_earn = pd.DataFrame(earnings)
             df_earn = df_earn[["date", "eps", "epsEstimated"]]
             df_earn.columns = ["Datum", "Werkelijke EPS", "Verwachte EPS"]
-            st.subheader("Earnings kalender (laatste/volgende):")
+            st.subheader("Earnings kalender:")
             st.dataframe(df_earn.set_index("Datum"))
 
-        if dividends:
+        if isinstance(dividends, list) and len(dividends) > 0 and isinstance(dividends[0], dict):
             df_div = pd.DataFrame(dividends)
             df_div = df_div[["date", "dividend"]]
             df_div.columns = ["Datum", "Dividend"]
@@ -63,19 +63,19 @@ if ticker:
             st.dataframe(df_div.set_index("Datum"))
 
     with st.expander("📈 EPS analyse"):
-        if eps_quarters:
+        if isinstance(eps_quarters, list) and len(eps_quarters) > 0 and isinstance(eps_quarters[0], dict):
             df_epsq = pd.DataFrame(eps_quarters)
             df_epsq = df_epsq[["date", "eps"]]
             df_epsq.columns = ["Datum", "EPS"]
             df_epsq["Datum"] = pd.to_datetime(df_epsq["Datum"])
             df_epsq = df_epsq.sort_values("Datum")
+            df_epsq["EPS_fmt"] = df_epsq["EPS"].apply(format_value)
 
             st.subheader("EPS per kwartaal")
-            st.dataframe(df_epsq.set_index("Datum"))
+            st.dataframe(df_epsq.set_index("Datum")[["EPS_fmt"]])
+            st.line_chart(df_epsq.set_index("Datum")[["EPS"]])
 
-            st.line_chart(df_epsq.set_index("Datum"))
-
-        if eps_forecast:
+        if isinstance(eps_forecast, list) and len(eps_forecast) > 0 and isinstance(eps_forecast[0], dict):
             st.subheader("🔮 Verwachte EPS")
             for f in eps_forecast:
                 st.write(f"Periode: {f.get('period')}, Verwachte EPS: {f.get('estimatedEps')}")
