@@ -185,7 +185,7 @@ if ratio_data:
                 st.dataframe(df_epsq.set_index("Datum")[["EPS_fmt"]])
                 st.line_chart(df_epsq.set_index("Datum")[["EPS"]])
 
-             if isinstance(eps_forecast, list) and len(eps_forecast) > 0 and isinstance(eps_forecast[0], dict):
+            if isinstance(eps_forecast, list) and len(eps_forecast) > 0 and isinstance(eps_forecast[0], dict):
                 st.subheader("🔮 Verwachte EPS")
                 for f in eps_forecast:
                     st.write(f"Periode: {f.get('period')}, Verwachte EPS: {f.get('estimatedEps')}")
