@@ -130,19 +130,6 @@ if ratio_data:
             if extra_cols:
                 st.dataframe(df_extra.set_index("Jaar")[extra_cols])
 
-        with st.expander("📊 Grafieken"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
-            with col2:
-                chart_df = df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]].copy()
-                chart_df["returnOnEquity"] *= 100
-                chart_df.rename(columns={
-                    "priceEarningsRatio": "K/W",
-                    "returnOnEquity": "ROE (%)"
-                }, inplace=True)
-                st.line_chart(chart_df)
-
         with st.expander("🧮 Extra Ratio's per kwartaal"):
             df_qr = get_ratios(ticker + "?period=quarter")
             if isinstance(df_qr, list) and len(df_qr) > 0 and isinstance(df_qr[0], dict):
@@ -155,6 +142,19 @@ if ratio_data:
                         df_qr[col] = df_qr[col].apply(format_value)
                 df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
                 st.dataframe(df_qr.set_index("Kwartaal"))
+
+        with st.expander("📊 Grafieken"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
+            with col2:
+                chart_df = df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]].copy()
+                chart_df["returnOnEquity"] *= 100
+                chart_df.rename(columns={
+                    "priceEarningsRatio": "K/W",
+                    "returnOnEquity": "ROE (%)"
+                }, inplace=True)
+                st.line_chart(chart_df)
 
 
         with st.expander("📅 Belangrijke datums"):
