@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
 from fmp_api import get_income_statement, get_ratios
-from extra_data import get_profile, get_key_metrics
+from extra_data import (
+    get_profile, get_key_metrics, get_earning_calendar,
+    get_dividend_history, get_quarterly_eps, get_eps_forecast
+)
 from tickers import ticker_list
 
 def format_value(value, is_percent=False):
@@ -29,6 +32,10 @@ if ticker:
     key_metrics = get_key_metrics(ticker)
     income_data = get_income_statement(ticker)
     ratio_data = get_ratios(ticker)
+    earnings = get_earning_calendar(ticker)
+    dividends = get_dividend_history(ticker)
+    eps_quarters = get_quarterly_eps(ticker)
+    eps_forecast = get_eps_forecast(ticker)
 
     if profile and key_metrics:
         with st.expander("🧾 Bedrijfsprofiel & Kerninfo", expanded=True):
@@ -40,75 +47,36 @@ if ticker:
             col3.metric("Payout Ratio", format_value(key_metrics.get("payoutRatio", 0), is_percent=True))
             st.caption(profile.get("description", ""))
 
-    if income_data:
-        df_income = pd.DataFrame(income_data)
-        df_income_fmt = df_income.copy()
-        df_income_fmt["revenue"] = df_income_fmt["revenue"].apply(format_value)
-        df_income_fmt["netIncome"] = df_income_fmt["netIncome"].apply(format_value)
-        df_income_fmt["eps"] = df_income_fmt["eps"].apply(format_value)
-        df_income_fmt.rename(columns={
-            "revenue": "Omzet",
-            "netIncome": "Winst",
-            "eps": "WPA",
-            "date": "Jaar"
-        }, inplace=True)
-
-        with st.expander("📈 Omzet, Winst en EPS"):
-            st.dataframe(df_income_fmt.set_index("Jaar")[["Omzet", "Winst", "WPA"]])
-
-    if ratio_data:
-        df_ratio = pd.DataFrame(ratio_data)
-        df_ratio_fmt = df_ratio.copy()
-        df_ratio_fmt["priceEarningsRatio"] = df_ratio_fmt["priceEarningsRatio"].apply(format_value)
-        df_ratio_fmt["returnOnEquity"] = df_ratio_fmt["returnOnEquity"].apply(lambda x: format_value(x * 100, is_percent=False))
-        df_ratio_fmt["debtEquityRatio"] = df_ratio_fmt["debtEquityRatio"].apply(format_value)
-        df_ratio_fmt.rename(columns={
-            "priceEarningsRatio": "K/W",
-            "returnOnEquity": "ROE (%)",
-            "debtEquityRatio": "Debt/Equity",
-            "date": "Jaar"
-        }, inplace=True)
-
-        with st.expander("📐 Ratio's over de jaren"):
-            st.dataframe(df_ratio_fmt.set_index("Jaar")[["K/W", "ROE (%)", "Debt/Equity"]])
-
-        with st.expander("🧮 Extra Ratio's"):
-            df_extra = df_ratio.copy()
-            df_extra.rename(columns={
-                "currentRatio": "Current ratio",
-                "quickRatio": "Quick ratio",
-                "grossProfitMargin": "Bruto marge",
-                "operatingProfitMargin": "Operationele marge",
-                "netProfitMargin": "Netto marge",
-                "returnOnAssets": "Rentabiliteit",
-                "inventoryTurnover": "Omloopsnelheid",
-                "date": "Jaar"
-            }, inplace=True)
-            for col in ["Bruto marge", "Operationele marge", "Netto marge"]:
-                if col in df_extra.columns:
-                    df_extra[col] = df_extra[col].apply(lambda x: format_value(x, is_percent=True))
-            for col in ["Current ratio", "Quick ratio", "Rentabiliteit", "Omloopsnelheid"]:
-                if col in df_extra.columns:
-                    df_extra[col] = df_extra[col].apply(format_value)
-            extra_cols = [col for col in df_extra.columns if col != "Jaar"]
-            if extra_cols:
-                st.dataframe(df_extra.set_index("Jaar")[extra_cols])
-
-        with st.expander("📊 Grafieken"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
-            with col2:
-                chart_df = df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]].copy()
-                chart_df["returnOnEquity"] *= 100
-                chart_df.rename(columns={
-                    "priceEarningsRatio": "K/W",
-                    "returnOnEquity": "ROE (%)"
-                }, inplace=True)
-                st.line_chart(chart_df)
-
     with st.expander("📅 Belangrijke datums"):
-        st.info("Deze module wordt binnenkort gevuld met earnings en dividend data.")
+        if earnings:
+            df_earn = pd.DataFrame(earnings)
+            df_earn = df_earn[["date", "eps", "epsEstimated"]]
+            df_earn.columns = ["Datum", "Werkelijke EPS", "Verwachte EPS"]
+            st.subheader("Earnings kalender (laatste/volgende):")
+            st.dataframe(df_earn.set_index("Datum"))
+
+        if dividends:
+            df_div = pd.DataFrame(dividends)
+            df_div = df_div[["date", "dividend"]]
+            df_div.columns = ["Datum", "Dividend"]
+            st.subheader("Dividend historie:")
+            st.dataframe(df_div.set_index("Datum"))
 
     with st.expander("📈 EPS analyse"):
-        st.info("EPS per kwartaal en jaar komt hier binnenkort beschikbaar.")
+        if eps_quarters:
+            df_epsq = pd.DataFrame(eps_quarters)
+            df_epsq = df_epsq[["date", "eps"]]
+            df_epsq.columns = ["Datum", "EPS"]
+            df_epsq["Datum"] = pd.to_datetime(df_epsq["Datum"])
+            df_epsq = df_epsq.sort_values("Datum")
+
+            st.subheader("EPS per kwartaal")
+            st.dataframe(df_epsq.set_index("Datum"))
+
+            st.line_chart(df_epsq.set_index("Datum"))
+
+        if eps_forecast:
+            st.subheader("🔮 Verwachte EPS")
+            for f in eps_forecast:
+                st.write(f"Periode: {f.get('period')}, Verwachte EPS: {f.get('estimatedEps')}")
+
