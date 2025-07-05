@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from fmp_api import get_income_statement, get_ratios
 from tickers import ticker_list
 
@@ -10,18 +11,25 @@ ticker = st.selectbox("Selecteer een ticker", ticker_list)
 if ticker:
     st.info(f"📥 Data wordt opgehaald voor: {ticker}")
 
-    income = get_income_statement(ticker)
-    ratios = get_ratios(ticker)
+    income_data = get_income_statement(ticker)
+    ratio_data = get_ratios(ticker)
 
-    if income and ratios:
-        st.subheader("📈 Kerncijfers")
-        st.metric("Omzet", f"${income['revenue']:,}")
-        st.metric("Winst", f"${income['netIncome']:,}")
-        st.metric("EPS", f"${income['eps']}")
+    if income_data and ratio_data:
+        df_income = pd.DataFrame(income_data)
+        df_ratio = pd.DataFrame(ratio_data)
 
-        st.subheader("📐 Belangrijke ratio's")
-        st.metric("K/W-ratio", round(ratios['priceEarningsRatio'], 2))
-        st.metric("ROE", f"{round(ratios['returnOnEquity']*100, 2)}%")
-        st.metric("Debt/Equity", round(ratios['debtEquityRatio'], 2))
+        st.subheader("📈 Kerncijfers over laatste jaren")
+        st.dataframe(df_income[["date", "revenue", "netIncome", "eps"]].set_index("date"))
+
+        st.subheader("📐 Belangrijke ratio's over tijd")
+        st.dataframe(df_ratio[["date", "priceEarningsRatio", "returnOnEquity", "debtEquityRatio"]].set_index("date"))
+
+        st.subheader("📊 Visualisaties")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
+        with col2:
+            st.line_chart(df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]])
     else:
         st.error("Kon geen data ophalen. Probeer een andere ticker.")
