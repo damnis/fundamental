@@ -131,40 +131,37 @@ if ratio_data:
                 st.dataframe(df_extra.set_index("Jaar")[extra_cols])
 
         
-        with st.expander("🧮 Extra Ratio's per kwartaal (geschat)"):
-            # Haal earnings datums op (laatste 4)
-            earnings_dates = []
-            if isinstance(earnings, list) and len(earnings) > 0:
-                for item in earnings:
-                    try:
-                        earnings_dates.append(pd.to_datetime(item.get("date")))
-                    except:
-                        pass
-                earnings_dates = sorted(set(earnings_dates))[-4:]
+        with st.expander("🧮 Extra Ratio's per kwartaal (afgeleid uit publicatiedatum)"):
+            if "date" in df_ratio.columns:
+                df_ratio["date"] = pd.to_datetime(df_ratio["date"])
+                last_date = df_ratio["date"].max()
 
-            # Filter ratio-data op kwartaalmomenten (3 maanden terug vanaf earnings)
-            df_qr = df_ratio.copy()
-            df_qr["date"] = pd.to_datetime(df_qr["date"])
+                # Genereer 4 datums terug in de tijd (3 maanden stappen)
+                q_dates = [last_date - pd.DateOffset(months=3 * i) for i in range(4)]
 
-            valid_qdates = []
-            for edate in earnings_dates:
-                approx_qdate = edate - pd.DateOffset(months=3)
-                closest = df_qr.iloc[(df_qr["date"] - approx_qdate).abs().argsort()[:1]]
-                valid_qdates.append(closest)
+                # Maak rijen aan voor elk kwartaal
+                df_q_est = pd.DataFrame({"Kwartaal": q_dates})
+                for col in df_ratio.columns:
+                    if col not in ["date"]:
+                        value = df_ratio[col].iloc[-1]  # laatste bekende jaarwaarde als basis
+                        df_q_est[col] = value
 
-            if valid_qdates:
-                df_quarters = pd.concat(valid_qdates).drop_duplicates().sort_values("date")
-                df_quarters.rename(columns=col_renames, inplace=True)
-                for col in df_quarters.columns:
+                # Kolomnamen vertalen + formatteren
+                df_q_est.rename(columns=col_renames, inplace=True)
+                for col in df_q_est.columns:
+                    if col == "Kwartaal":
+                        continue
                     if "%" in col or "marge" in col.lower():
-                        df_quarters[col] = df_quarters[col].apply(lambda x: format_value(x, is_percent=True))
-                    elif col not in ["date"]:
-                        df_quarters[col] = df_quarters[col].apply(format_value)
-                df_quarters.rename(columns={"date": "Kwartaal"}, inplace=True)
-                st.dataframe(df_quarters.set_index("Kwartaal"))
+                        df_q_est[col] = df_q_est[col].apply(lambda x: format_value(x, is_percent=True))
+                    else:
+                        df_q_est[col] = df_q_est[col].apply(format_value)
+
+                df_q_est["Kwartaal"] = df_q_est["Kwartaal"].dt.date
+                st.dataframe(df_q_est.set_index("Kwartaal"))
             else:
-                st.info("Geen betrouwbare kwartaaldata gevonden voor ratio's.")
-                
+                st.info("Geen datumkolom gevonden om kwartaalratio's af te leiden.")
+
+    
         with st.expander("🧮 Extra Ratio's per kwartaal"):
             df_qr = get_ratios(ticker + "?period=quarter")
             if isinstance(df_qr, list) and len(df_qr) > 0 and isinstance(df_qr[0], dict):
