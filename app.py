@@ -5,15 +5,19 @@ from extra_data import get_profile, get_key_metrics
 from tickers import ticker_list
 
 def format_value(value, is_currency=False, is_percent=False):
-    if isinstance(value, (int, float)):
-        if is_currency and abs(value) > 200_000:
-            return f"${value/1_000_000:.2f} mln"
+    try:
+        if value is None:
+            return "-"
+        value = float(value)
         if is_currency:
+            if abs(value) > 200_000:
+                return f"${value / 1_000_000:.2f} mln"
             return f"${value:,.2f}"
         if is_percent:
             return f"{value:.2%}"
         return f"{value:,.2f}"
-    return value
+    except:
+        return "-"
 
 st.set_page_config(page_title="Fundamentele Analyse Tool", layout="wide")
 st.title("📊 Fundamentool: Ratio-analyse van aandelen")
