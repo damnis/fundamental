@@ -148,26 +148,26 @@ if ticker:
                 st.error(f"Fout bij laden van kwartaaldata: {e}")
 
         with st.expander("🧮 Extra Ratio's per kwartaal (origineel van FMP)"):
-    df_qr = get_ratios(ticker + "?period=quarter")
-    if isinstance(df_qr, list) and len(df_qr) > 0 and isinstance(df_qr[0], dict):
-        df_qr = pd.DataFrame(df_qr)
-        df_qr.rename(columns=col_renames, inplace=True)
+            df_qr = get_ratios(ticker + "?period=quarter")
+            if isinstance(df_qr, list) and len(df_qr) > 0 and isinstance(df_qr[0], dict):
+            df_qr = pd.DataFrame(df_qr)
+            df_qr.rename(columns=col_renames, inplace=True)
 
-        # Kolommen formatteren
-        for col in df_qr.columns:
-            if col == "date":
-                continue
-            if "%" in col or "marge" in col.lower():
-                df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=True))
-            else:
-                df_qr[col] = df_qr[col].apply(format_value)
+            # Kolommen formatteren
+            for col in df_qr.columns:
+                if col == "date":
+                    continue
+                if "%" in col or "marge" in col.lower():
+                    df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=True))
+                else:
+                    df_qr[col] = df_qr[col].apply(format_value)
 
-        df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
-        df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
-        extra_cols_q = [col for col in df_qr.columns if col != "Kwartaal"]
-        st.dataframe(df_qr.set_index("Kwartaal")[extra_cols_q])
-    else:
-        st.info("Geen kwartaaldata beschikbaar via FMP.")
+            df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
+            df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
+            extra_cols_q = [col for col in df_qr.columns if col != "Kwartaal"]
+            st.dataframe(df_qr.set_index("Kwartaal")[extra_cols_q])
+        else:
+            st.info("Geen kwartaaldata beschikbaar via FMP.")
 
         
 
