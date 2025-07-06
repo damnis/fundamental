@@ -191,7 +191,7 @@ if ticker:
          #       for col in col_renames.values():
        #             if col in df_qr.columns:
         #                is_pct = "marge" in col.lower()
-       ÷                 df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=is_pct))
+       #                 df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=is_pct))
       #          df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
       #          st.dataframe(df_qr.set_index("Kwartaal")[list(col_renames.values())])
 
