@@ -182,18 +182,18 @@ if ticker:
                 st.warning("Geen kwartaalratio-data gevonden.")
         
         # 🔹 Extra ratio's per kwartaal (FMP-data)
-        with st.expander("🧮 Extra Ratio's per kwartaal (FMP-data)"):
-            df_qr = get_ratios(ticker + "?period=quarter")
-            if isinstance(df_qr, list) and len(df_qr) > 0:
-                df_qr = pd.DataFrame(df_qr)
-                df_qr.rename(columns=col_renames, inplace=True)
-                df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
-                for col in col_renames.values():
-                    if col in df_qr.columns:
-                        is_pct = "marge" in col.lower()
-                        df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=is_pct))
-                df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
-                st.dataframe(df_qr.set_index("Kwartaal")[list(col_renames.values())])
+  #      with st.expander("🧮 Extra Ratio's per kwartaal (FMP-data)"):
+    #        df_qr = get_ratios(ticker + "?period=quarter")
+     #       if isinstance(df_qr, list) and len(df_qr) > 0:
+    #            df_qr = pd.DataFrame(df_qr)
+      #          df_qr.rename(columns=col_renames, inplace=True)
+        #        df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
+         #       for col in col_renames.values():
+       #             if col in df_qr.columns:
+        #                is_pct = "marge" in col.lower()
+       ÷                 df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=is_pct))
+      #          df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
+      #          st.dataframe(df_qr.set_index("Kwartaal")[list(col_renames.values())])
 
     # 🔹 Grafieken
     with st.expander("📊 Grafieken"):
