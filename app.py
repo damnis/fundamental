@@ -160,10 +160,10 @@ if ticker:
                 df_qr = pd.DataFrame(df_qr)
 
         # Herbenoemen van kolommen waar mogelijk
-               df_qr.rename(columns=col_renames, inplace=True)
-               df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
+                df_qr.rename(columns=col_renames, inplace=True)
+                df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
 
-               df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
+                df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
 
         # Format alle numerieke kolommen
                 for col in df_qr.columns:
