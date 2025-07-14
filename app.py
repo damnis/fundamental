@@ -107,7 +107,90 @@ if ticker:
                     df_extra[col] = df_extra[col].apply(lambda x: format_value(x, is_percent=is_pct))
             st.dataframe(df_extra.set_index("Jaar")[list(col_renames.values())])
 
-        # 🔹 Extra ratio's per kwartaal (geschat)
+        
+        # 🔹 Extra ratio's per kwartaal (FMP-data)
+        with st.expander("🧮 Extra Ratio's per kwartaal (FMP-data)"):
+            df_qr = get_ratios(ticker + "?period=quarter")
+            if isinstance(df_qr, list) and len(df_qr) > 0:
+                df_qr = pd.DataFrame(df_qr)
+
+        # Herbenoemen van kolommen waar mogelijk
+                df_qr.rename(columns=col_renames, inplace=True)
+                df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
+
+                df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
+
+        # Format alle numerieke kolommen
+                for col in df_qr.columns:
+                    if col == "Kwartaal":
+                        continue
+                    try:
+                        if "marge" in col.lower() or "%" in col or "Yield" in col:
+                            df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=True))
+                        else:
+                            df_qr[col] = df_qr[col].apply(format_value)
+                    except:
+                        pass  # Niet-numeriek of error: negeren
+
+                st.dataframe(df_qr.set_index("Kwartaal"))
+            else:
+                st.warning("Geen kwartaalratio-data gevonden.")
+        
+ 
+    # 🔹 Grafieken
+    with st.expander("📊 Grafieken"):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
+        with col2:
+            chart_df = df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]].copy()
+            chart_df["returnOnEquity"] *= 100
+            chart_df.rename(columns={"priceEarningsRatio": "K/W", "returnOnEquity": "ROE (%)"}, inplace=True)
+            st.line_chart(chart_df)
+
+    # 🔹 Belangrijke datums
+    with st.expander("📅 Belangrijke datums"):
+        if isinstance(earnings, list) and len(earnings) > 0:
+            df_earn = pd.DataFrame(earnings)[["date", "eps", "epsEstimated"]]
+            df_earn.columns = ["Datum", "Werkelijke EPS", "Verwachte EPS"]
+            st.subheader("Earnings kalender:")
+            st.dataframe(df_earn.set_index("Datum"))
+
+        if isinstance(dividends, list) and len(dividends) > 0:
+            df_div = pd.DataFrame(dividends)[["date", "dividend"]]
+            df_div.columns = ["Datum", "Dividend"]
+            st.subheader("Dividend historie:")
+            st.dataframe(df_div.set_index("Datum"))
+
+    # 🔹 EPS-analyse (grafiek met verwacht & werkelijk) (werkt niet)
+    with st.expander("📈 EPS analyse"):
+        if isinstance(eps_quarters, list) and len(eps_quarters) > 0:
+            df_epsq = pd.DataFrame(eps_quarters)[["date", "eps"]]
+            df_epsq.columns = ["Datum", "EPS"]
+            df_epsq["Datum"] = pd.to_datetime(df_epsq["Datum"])
+            df_epsq = df_epsq.sort_values("Datum")
+            eps_df = df_epsq.copy()
+            eps_df["Verwachte EPS"] = None
+            if isinstance(eps_forecast, list):
+                for f in eps_forecast:
+                    try:
+                        d = pd.to_datetime(f.get("date"))
+                        est = f.get("estimatedEps")
+                        if d and est is not None:
+                            eps_df.loc[eps_df["Datum"] == d, "Verwachte EPS"] = float(est)
+                    except:
+                        pass
+            chart_data = eps_df.set_index("Datum")[["EPS", "Verwachte EPS"]]
+            st.line_chart(chart_data)
+            st.dataframe(chart_data.applymap(format_value))
+
+
+
+
+
+
+
+# 🔹 Extra ratio's per kwartaal (geschat)
  #       with st.expander("🧮 Extra Ratio's per kwartaal (geschat)"):
    #         if "date" in df_ratio.columns:
     #            df_ratio["date"] = pd.to_datetime(df_ratio["date"])
@@ -153,35 +236,9 @@ if ticker:
      #                   df_quarters[col] = df_quarters[col].apply(lambda x: format_value(x, is_percent=is_pct))
       #          st.dataframe(df_quarters.set_index("Kwartaal")[list(col_renames.values())])
 
-        # 🔹 Extra ratio's per kwartaal (FMP-data)
-        with st.expander("🧮 Extra Ratio's per kwartaal (FMP-data)"):
-            df_qr = get_ratios(ticker + "?period=quarter")
-            if isinstance(df_qr, list) and len(df_qr) > 0:
-                df_qr = pd.DataFrame(df_qr)
 
-        # Herbenoemen van kolommen waar mogelijk
-                df_qr.rename(columns=col_renames, inplace=True)
-                df_qr.rename(columns={"date": "Kwartaal"}, inplace=True)
 
-                df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
-
-        # Format alle numerieke kolommen
-                for col in df_qr.columns:
-                    if col == "Kwartaal":
-                        continue
-                    try:
-                        if "marge" in col.lower() or "%" in col or "Yield" in col:
-                            df_qr[col] = df_qr[col].apply(lambda x: format_value(x, is_percent=True))
-                        else:
-                            df_qr[col] = df_qr[col].apply(format_value)
-                    except:
-                        pass  # Niet-numeriek of error: negeren
-
-                st.dataframe(df_qr.set_index("Kwartaal"))
-            else:
-                st.warning("Geen kwartaalratio-data gevonden.")
-        
-        # 🔹 Extra ratio's per kwartaal (FMP-data)
+       # 🔹 Extra ratio's per kwartaal (FMP-data)
   #      with st.expander("🧮 Extra Ratio's per kwartaal (FMP-data)"):
     #        df_qr = get_ratios(ticker + "?period=quarter")
      #       if isinstance(df_qr, list) and len(df_qr) > 0:
@@ -195,49 +252,3 @@ if ticker:
       #          df_qr["Kwartaal"] = pd.to_datetime(df_qr["Kwartaal"]).dt.date
       #          st.dataframe(df_qr.set_index("Kwartaal")[list(col_renames.values())])
 
-    # 🔹 Grafieken
-    with st.expander("📊 Grafieken"):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.line_chart(df_income.set_index("date")[["revenue", "netIncome"]])
-        with col2:
-            chart_df = df_ratio.set_index("date")[["priceEarningsRatio", "returnOnEquity"]].copy()
-            chart_df["returnOnEquity"] *= 100
-            chart_df.rename(columns={"priceEarningsRatio": "K/W", "returnOnEquity": "ROE (%)"}, inplace=True)
-            st.line_chart(chart_df)
-
-    # 🔹 Belangrijke datums
-    with st.expander("📅 Belangrijke datums"):
-        if isinstance(earnings, list) and len(earnings) > 0:
-            df_earn = pd.DataFrame(earnings)[["date", "eps", "epsEstimated"]]
-            df_earn.columns = ["Datum", "Werkelijke EPS", "Verwachte EPS"]
-            st.subheader("Earnings kalender:")
-            st.dataframe(df_earn.set_index("Datum"))
-
-        if isinstance(dividends, list) and len(dividends) > 0:
-            df_div = pd.DataFrame(dividends)[["date", "dividend"]]
-            df_div.columns = ["Datum", "Dividend"]
-            st.subheader("Dividend historie:")
-            st.dataframe(df_div.set_index("Datum"))
-
-    # 🔹 EPS-analyse (grafiek met verwacht & werkelijk)
-    with st.expander("📈 EPS analyse"):
-        if isinstance(eps_quarters, list) and len(eps_quarters) > 0:
-            df_epsq = pd.DataFrame(eps_quarters)[["date", "eps"]]
-            df_epsq.columns = ["Datum", "EPS"]
-            df_epsq["Datum"] = pd.to_datetime(df_epsq["Datum"])
-            df_epsq = df_epsq.sort_values("Datum")
-            eps_df = df_epsq.copy()
-            eps_df["Verwachte EPS"] = None
-            if isinstance(eps_forecast, list):
-                for f in eps_forecast:
-                    try:
-                        d = pd.to_datetime(f.get("date"))
-                        est = f.get("estimatedEps")
-                        if d and est is not None:
-                            eps_df.loc[eps_df["Datum"] == d, "Verwachte EPS"] = float(est)
-                    except:
-                        pass
-            chart_data = eps_df.set_index("Datum")[["EPS", "Verwachte EPS"]]
-            st.line_chart(chart_data)
-            st.dataframe(chart_data.applymap(format_value))
